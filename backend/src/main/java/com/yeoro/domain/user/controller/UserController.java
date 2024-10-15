@@ -34,27 +34,30 @@ public class UserController {
 		this.userService = userService;
 		this.jwtUtil = jwtUtil;
 	}
-	
+
 	@Operation(summary="회원 가입", description = "회원 정보를 입력받아 user 테이블에 저장한다.")
 	@PostMapping("/register")
 	public ResponseEntity<Map<String, Object>> register(@RequestBody UserDto userDto) {
 		Map<String, Object> resultMap = new HashMap<>();
-	    HttpStatus status = HttpStatus.ACCEPTED;
-	    try {
-	        boolean result = userService.addUser(userDto);
-			if(result) {
+		HttpStatus status = HttpStatus.ACCEPTED;
+		log.info("회원 가입 요청: {}", userDto);
+		try {
+			boolean result = userService.addUser(userDto);
+			if (result) {
 				resultMap.put("message", "회원 가입 성공");
 				status = HttpStatus.CREATED;
+				log.info("회원 가입 성공: {}", userDto.getUserId());
 			} else {
 				resultMap.put("message", "회원 가입에 실패했습니다.");
 				status = HttpStatus.BAD_REQUEST;
+				log.warn("회원 가입 실패: {}", userDto.getUserId());
 			}
-	    } catch (Exception e) {
-	        log.error("회원 가입 에러 발생 : {}", e);
-	        resultMap.put("message", e.getMessage());
-	        status = HttpStatus.INTERNAL_SERVER_ERROR;
-	    }
-	    return new ResponseEntity<>(resultMap, status);
+		} catch (Exception e) {
+			log.error("회원 가입 에러 발생 : {}", e.getMessage(), e);
+			resultMap.put("message", e.getMessage());
+			status = HttpStatus.INTERNAL_SERVER_ERROR;
+		}
+		return new ResponseEntity<>(resultMap, status);
 	}
 	
 	@Operation(summary="회원 탈퇴", description = "회원 아이디를 받아 user테이블에서 회원 정보를 삭제한다.")

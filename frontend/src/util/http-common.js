@@ -4,7 +4,7 @@ const { VITE_API_BASE_URL } = import.meta.env
 const localAxios = () => { 
     const instance = axios.create({
         baseURL: VITE_API_BASE_URL,
-        header: {
+        headers: {
             'Content-Type': 'application/json;charset=utf-8'
         }
     })

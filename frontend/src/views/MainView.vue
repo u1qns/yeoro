@@ -22,5 +22,4 @@ import SearchBar from '@/components/SearchBar.vue'
 </template>
 
 <style scoped>
-/* 여기에 Tailwind CSS를 사용하는 스타일을 추가할 필요는 없습니다 */
 </style>
