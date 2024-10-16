@@ -1,21 +1,23 @@
 package com.yeoro.domain.user.entity;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-//@Entity
-@Getter
+@Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class User {
     private String id;
     private String password;
     private String nickname;
-    private String picture_url;
-    private String provider_type;
-    private String refresh_token;
-    private LocalDateTime created_at = LocalDateTime.now();
-    private LocalDateTime updated_at = LocalDateTime.now();;
+    private String pictureUrl;
+    private String providerType;
+    private String refreshToken;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
