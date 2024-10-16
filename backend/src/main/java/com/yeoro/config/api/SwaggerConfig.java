@@ -1,4 +1,4 @@
-package com.yeoro.config;
+package com.yeoro.config.api;
 
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.info.Info;
         )
 )
 @Configuration
-public class SwaggerConfiguration {
+public class SwaggerConfig {
 
     @Bean
     public GroupedOpenApi allApi() {

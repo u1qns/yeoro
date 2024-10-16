@@ -1,23 +1,32 @@
-package com.yeoro.config;
+package com.yeoro.config.web;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 
-import com.yeoro.global.config.security.jwt.interceptor.JWTInterceptor;
+import com.yeoro.global.security.jwt.interceptor.JWTInterceptor;
 
 @Configuration
 @EnableWebMvc
-public class WebConfiguration implements WebMvcConfigurer {
+public class WebConfig  implements WebMvcConfigurer {
 	
 	private JWTInterceptor jwtInterceptor;
 
-	public WebConfiguration(JWTInterceptor jwtInterceptor) {
-		super();
+	@Autowired
+	public WebConfig (JWTInterceptor jwtInterceptor) {
 		this.jwtInterceptor = jwtInterceptor;
+	}
+
+	@Override
+	public void addInterceptors(InterceptorRegistry registry) {
+		registry.addInterceptor(jwtInterceptor)
+				.addPathPatterns("/**") // 모든 요청에 대해 JWT 검사
+				.excludePathPatterns("/user/login", "/user/register"); // 로그인과 회원 가입은 제외
 	}
 
 	@Override

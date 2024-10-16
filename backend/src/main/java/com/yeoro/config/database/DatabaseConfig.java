@@ -1,4 +1,4 @@
-package com.yeoro.config;
+package com.yeoro.config.database;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -17,11 +17,11 @@ import javax.sql.DataSource;
 @Configuration
 @PropertySource("classpath:/application.properties")
 @MapperScan(basePackages = { "com.yeoro.domain.*.model.mapper" })
-public class DataBaseConfiguration {
+public class DatabaseConfig {
 
     final ApplicationContext applicationContext;
 
-    public DataBaseConfiguration(ApplicationContext applicationContext) {
+    public DatabaseConfig(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
