@@ -9,11 +9,9 @@ import java.util.Map;
 import java.io.File;
 
 import com.yeoro.domain.user.model.dto.response.LoginResponseDto;
-import com.yeoro.global.config.security.jwt.util.JWTUtil;
+import com.yeoro.global.security.jwt.util.JWTUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.yeoro.domain.user.model.dto.UserDto;
@@ -43,7 +41,7 @@ public class UserService {
 		return userMapper.insertUser(userDto) > 0;
 	}
 
-	public Boolean unregister(String userId, String token)
+	public Boolean unregister(String userId)
 			throws SQLException {
 		return userMapper.deleteUser(userId) > 0;
 	}
@@ -96,25 +94,14 @@ public class UserService {
 		return userMapper.updateUser(userDto) > 0;
 	}
 
-	public void deleteRefreshToken(String userId, String token) throws Exception {
-		// 토큰 검증
-		if (!jwtUtil.checkToken(token)) {
-			log.error("사용 불가능 토큰입니다.");
-			throw new RuntimeException("사용 불가능한 토큰입니다."); // 사용자 정의 예외를 던짐
-		}
-
+	public void deleteRefreshToken(String userId) throws Exception {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("userId", userId);
 		map.put("token", null);
 		userMapper.deleteRefreshToken(map);
 	}
 
-	public UserDto userInfo(String userId, String token) throws Exception {
-		// 토큰 검증
-		if (!jwtUtil.checkToken(token)) {
-			log.error("사용 불가능 토큰입니다.");
-			throw new RuntimeException("사용 불가능한 토큰입니다."); // 사용자 정의 예외를 던짐
-		}
+	public UserDto userInfo(String userId) throws Exception {
 		return userMapper.userInfo(userId);
 	}
 
@@ -125,8 +112,9 @@ public class UserService {
 		userMapper.saveRefreshToken(map);
 	}
 
-	public String refreshAccessToken(UserDto userDTO, String refreshToken) throws Exception {
-		if (!jwtUtil.checkToken(refreshToken)) {
+	public String refreshAccessToken(UserDto userDTO) throws Exception {
+	   String refreshToken = userDTO.getRefreshToken();
+	   if (!jwtUtil.checkToken(refreshToken)) {
 			return "";
 			//throw new UnauthorizedException("유효하지 않은 Refresh Token입니다."); // 사용자 정의 예외
 		}
@@ -141,8 +129,5 @@ public class UserService {
 		// 새로운 Access Token 생성
 		return jwtUtil.createAccessToken(userDTO.getUserId());
 	}
-
-
-
 
 }

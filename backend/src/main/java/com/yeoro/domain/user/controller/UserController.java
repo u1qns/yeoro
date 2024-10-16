@@ -40,11 +40,8 @@ public class UserController {
 
 	@Operation(summary = "회원 탈퇴", description = "회원 아이디를 받아 user 테이블에서 회원 정보를 삭제합니다.")
 	@DeleteMapping("/unregister/{userId}")
-	public ResponseEntity<Void> unregister(
-			@PathVariable String userId,
-			HttpServletRequest request) throws SQLException {
-		String token = request.getHeader("Authorization");
-		userService.unregister(userId, token);
+	public ResponseEntity<Void> unregister(@PathVariable String userId) throws SQLException {
+		userService.unregister(userId);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -67,29 +64,23 @@ public class UserController {
 	@Operation(summary = "로그아웃", description = "회원 정보를 담은 Token을 제거합니다.")
 	@GetMapping("/logout/{userId}")
 	@Hidden
-	public ResponseEntity<Void> removeToken(
-			@PathVariable("userId") String userId,
-			HttpServletRequest request) throws Exception {
-		String token = request.getHeader("Authorization");
-		userService.deleteRefreshToken(userId, token);
+	public ResponseEntity<Void> removeToken(@PathVariable("userId") String userId) throws Exception {
+		userService.deleteRefreshToken(userId);
 		return ResponseEntity.ok().build();
 	}
 
 	@Operation(summary = "내 정보 조회", description = "회원 아이디와 토큰 정보로 인증 후, 사용자 정보를 DTO로 반환합니다.")
 	@GetMapping("/my/{userId}")
 	public ResponseEntity<UserDto> getInfo(
-			@PathVariable("userId") @Parameter(description = "인증할 회원의 아이디.", required = true) String userId,
-			HttpServletRequest request) throws Exception {
-		String token = request.getHeader("Authorization");
-		UserDto userDto = userService.userInfo(userId, token);
+			@PathVariable("userId") @Parameter(description = "인증할 회원의 아이디.", required = true) String userId) throws Exception {
+		UserDto userDto = userService.userInfo(userId);
 		return ResponseEntity.ok(userDto);
 	}
 
 	@Operation(summary = "Access Token 재발급", description = "만료된 access token을 재발급 받습니다.")
 	@PostMapping("/refresh")
-	public ResponseEntity<Void> refreshToken(@RequestBody UserDto userDTO, HttpServletRequest request) throws Exception {
-		String refreshToken = request.getHeader("refreshToken");
-		userService.refreshAccessToken(userDTO, refreshToken);
+	public ResponseEntity<Void> refreshToken(@RequestBody UserDto userDTO) throws Exception {
+		userService.refreshAccessToken(userDTO);
 		return ResponseEntity.ok().build();
 	}
 }
