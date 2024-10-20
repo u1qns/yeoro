@@ -1,4 +1,4 @@
-package com.yeoro.config.api;
+package com.yeoro.global.config.api;
 
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;

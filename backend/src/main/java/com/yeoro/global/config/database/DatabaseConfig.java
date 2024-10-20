@@ -1,4 +1,4 @@
-package com.yeoro.config.database;
+package com.yeoro.global.config.database;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

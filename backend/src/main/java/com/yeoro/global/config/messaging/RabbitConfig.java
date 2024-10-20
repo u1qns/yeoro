@@ -1,4 +1,4 @@
-package com.yeoro.config.messaging;
+package com.yeoro.global.config.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

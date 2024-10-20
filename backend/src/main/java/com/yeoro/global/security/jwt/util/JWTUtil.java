@@ -14,6 +14,8 @@ import com.yeoro.global.exception.*;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static com.yeoro.global.exception.ErrorCode.UNAUTHORIZED;
+
 @Component
 @Slf4j
 public class JWTUtil {
@@ -113,14 +115,16 @@ public class JWTUtil {
 	public String getUserId(String authorization) {
 		Jws<Claims> claims = null;
 		try {
-			claims = Jwts.parser().setSigningKey(this.generateKey()).parseClaimsJws(authorization);
+			claims = Jwts.parser()
+					.setSigningKey(this.generateKey())
+					.parseClaimsJws(authorization);
+
+			Map<String, Object> value = claims.getBody();
+			return (String) value.get("userId");
 		} catch (Exception e) {
 			log.error(e.getMessage());
-			throw new UnAuthorizedException();
+			throw new CustomException(UNAUTHORIZED);
 		}
-		Map<String, Object> value = claims.getBody();
-		log.info("value : {}", value);
-		return (String) value.get("userId");
 	}
 
 }

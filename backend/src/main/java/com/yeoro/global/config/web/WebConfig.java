@@ -1,4 +1,4 @@
-package com.yeoro.config.web;
+package com.yeoro.global.config.web;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;

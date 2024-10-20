@@ -1,4 +1,4 @@
-package com.yeoro.config.web;
+package com.yeoro.global.config.web;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,53 +1,54 @@
 package com.yeoro.domain.user.model.service;
 
+import com.yeoro.domain.user.model.dto.UserDto;
+import com.yeoro.domain.user.model.dto.response.LoginResponseDto;
+import com.yeoro.domain.user.model.mapper.UserMapper;
+import com.yeoro.global.exception.CustomException;
+import com.yeoro.global.security.jwt.util.JWTUtil;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.File;
+import java.util.Optional;
 
-import com.yeoro.domain.user.model.dto.response.LoginResponseDto;
-import com.yeoro.global.security.jwt.util.JWTUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.yeoro.domain.user.model.dto.UserDto;
-import com.yeoro.domain.user.model.mapper.UserMapper;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.beans.factory.annotation.Value;
+import static com.yeoro.global.exception.ErrorCode.*;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class UserService {
 
 	@Value("${file.upload-dir}")
-	private String UPLOAD_PATH;
-	private UserMapper userMapper;
+	private String uploadPath;
 
-	@Autowired
+	private final UserMapper userMapper;
 	private final JWTUtil jwtUtil;
 
-   public UserService(UserMapper userMapper, JWTUtil jwtUtil) {
-       super();
-       this.userMapper = userMapper;
-	   this.jwtUtil = jwtUtil;
-   }
-
-	public Boolean register(UserDto userDto)
-			throws SQLException {
+	@Transactional
+	public Boolean register(UserDto userDto) throws SQLException {
 		return userMapper.insertUser(userDto) > 0;
 	}
 
-	public Boolean unregister(String userId)
-			throws SQLException {
+	@Transactional
+	public Boolean unregister(String userId) throws SQLException {
 		return userMapper.deleteUser(userId) > 0;
 	}
 
+	@Transactional
 	public LoginResponseDto login(UserDto userDTO) throws Exception {
-		UserDto loginUser = userMapper.login(userDTO);
+		UserDto loginUser = Optional.ofNullable(userMapper.login(userDTO))
+				.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
 		String accessToken = jwtUtil.createAccessToken(loginUser.getUserId());
 		String refreshToken = jwtUtil.createRefreshToken(loginUser.getUserId());
@@ -61,73 +62,82 @@ public class UserService {
 				.build();
 	}
 
-	public Boolean updateUser(UserDto userDto, MultipartFile file) throws Exception {
+	public Boolean updateUser(UserDto userDto, MultipartFile file) throws SQLException {
 		try {
 			if (file != null) {
-				String saveFolder = UPLOAD_PATH + File.separator + "profile";
-				File folder = new File(saveFolder);
-
-				if (!folder.exists())
-					folder.mkdirs();
-
-				String fileName = userDto.getUserId();
-				int index = file.getOriginalFilename().lastIndexOf('.');
-				if (index > 0 && index < file.getOriginalFilename().length() - 1) {
-					fileName += "." + file.getOriginalFilename().substring(index + 1);
-				}
-
-				Path filePath = Paths.get(saveFolder + "/" + fileName);
-
-				// 기존 프로필 삭제
-				if(Files.exists(filePath)) {
-					Files.delete(filePath);
-					userMapper.deletePicture(userDto.getUserId());
-				}
-				log.debug("filname : {}", fileName);
-				Files.copy(file.getInputStream(), filePath);
-				userDto.setPictureUrl(fileName);
+				handleFileUpload(userDto, file);
 			}
 		} catch (Exception e) {
-			log.error("파일 처리 도중 문제가 생겼습니다. : {}", e);
+			log.error("파일 처리 도중 문제가 발생했습니다: {}", e.getMessage());
+			throw new CustomException(FILE_PROCESSING_ERROR);
 		}
-
 		return userMapper.updateUser(userDto) > 0;
 	}
 
-	public void deleteRefreshToken(String userId) throws Exception {
+	private void handleFileUpload(UserDto userDto, MultipartFile file) throws IOException, SQLException {
+		String saveFolder = uploadPath + File.separator + "profile";
+		Files.createDirectories(Paths.get(saveFolder));
+
+		String fileName = userDto.getUserId() + getFileExtension(file);
+		Path filePath = Paths.get(saveFolder, fileName);
+
+		// 기존 프로필 삭제
+		if (Files.exists(filePath)) {
+			Files.delete(filePath);
+			userMapper.deletePicture(userDto.getUserId());
+		}
+
+		Files.copy(file.getInputStream(), filePath);
+		userDto.setPictureUrl(fileName);
+	}
+
+	private String getFileExtension(MultipartFile file) {
+		int index = Optional.ofNullable(file.getOriginalFilename())
+				.map(name -> name.lastIndexOf('.'))
+				.orElse(-1);
+		return (index > 0 && index < file.getOriginalFilename().length() - 1)
+				? "." + file.getOriginalFilename().substring(index + 1)
+				: "";
+	}
+
+	public void deleteRefreshToken(String userId) throws SQLException {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("userId", userId);
 		map.put("token", null);
 		userMapper.deleteRefreshToken(map);
 	}
 
-	public UserDto userInfo(String userId) throws Exception {
-		return userMapper.userInfo(userId);
+	public UserDto userInfo(String userId) throws SQLException {
+		return Optional.ofNullable(userMapper.userInfo(userId))
+				.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 	}
 
-	public void saveRefreshToken(String userId, String refreshToken) throws Exception {
+	@Transactional
+	public void saveRefreshToken(String userId, String refreshToken) throws SQLException {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("userId", userId);
 		map.put("token", refreshToken);
 		userMapper.saveRefreshToken(map);
 	}
 
-	public String refreshAccessToken(UserDto userDTO) throws Exception {
-	   String refreshToken = userDTO.getRefreshToken();
-	   if (!jwtUtil.checkToken(refreshToken)) {
-			return "";
-			//throw new UnauthorizedException("유효하지 않은 Refresh Token입니다."); // 사용자 정의 예외
+	public String refreshAccessToken(UserDto userDto) throws SQLException {
+		String refreshToken = userDto.getRefreshToken();
+		String userId = userDto.getUserId();
+
+		// Refresh Token 유효성 검사
+		if (!jwtUtil.checkToken(refreshToken)) {
+			throw new CustomException(INVALID_REFRESH_TOKEN);
 		}
 
 		// 저장된 Refresh Token과 비교
-		String storedRefreshToken = (String) userMapper.getRefreshToken(userDTO.getUserId());
+		String storedRefreshToken = (String) userMapper.getRefreshToken(userId);
 		if (!refreshToken.equals(storedRefreshToken)) {
-			return "";
-			//throw new UnauthorizedException("Refresh Token이 일치하지 않습니다.");
+			throw new CustomException(REFRESH_TOKEN_MISMATCH);
 		}
 
 		// 새로운 Access Token 생성
-		return jwtUtil.createAccessToken(userDTO.getUserId());
+		return jwtUtil.createAccessToken(userDto.getUserId());
 	}
+
 
 }
