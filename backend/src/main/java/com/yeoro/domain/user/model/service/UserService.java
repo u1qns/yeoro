@@ -1,6 +1,7 @@
 package com.yeoro.domain.user.model.service;
 
 import com.yeoro.domain.user.model.dto.UserDto;
+import com.yeoro.domain.user.model.dto.request.LoginRequestDto;
 import com.yeoro.domain.user.model.dto.response.LoginResponseDto;
 import com.yeoro.domain.user.model.mapper.UserMapper;
 import com.yeoro.global.exception.CustomException;
@@ -36,18 +37,18 @@ public class UserService {
 	private final JWTUtil jwtUtil;
 
 	@Transactional
-	public Boolean register(UserDto userDto) throws SQLException {
+	public Boolean register(UserDto userDto){
 		return userMapper.insertUser(userDto) > 0;
 	}
 
 	@Transactional
-	public Boolean unregister(String userId) throws SQLException {
+	public Boolean unregister(String userId) {
 		return userMapper.deleteUser(userId) > 0;
 	}
 
 	@Transactional
-	public LoginResponseDto login(UserDto userDTO) throws Exception {
-		UserDto loginUser = Optional.ofNullable(userMapper.login(userDTO))
+	public LoginResponseDto login(LoginRequestDto loginRequestDto) {
+		UserDto loginUser = Optional.ofNullable(userMapper.login(loginRequestDto))
 				.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
 		String accessToken = jwtUtil.createAccessToken(loginUser.getUserId());
@@ -62,7 +63,7 @@ public class UserService {
 				.build();
 	}
 
-	public Boolean updateUser(UserDto userDto, MultipartFile file) throws SQLException {
+	public Boolean updateUser(UserDto userDto, MultipartFile file) {
 		try {
 			if (file != null) {
 				handleFileUpload(userDto, file);
@@ -74,7 +75,7 @@ public class UserService {
 		return userMapper.updateUser(userDto) > 0;
 	}
 
-	private void handleFileUpload(UserDto userDto, MultipartFile file) throws IOException, SQLException {
+	private void handleFileUpload(UserDto userDto, MultipartFile file) throws IOException {
 		String saveFolder = uploadPath + File.separator + "profile";
 		Files.createDirectories(Paths.get(saveFolder));
 
@@ -100,27 +101,27 @@ public class UserService {
 				: "";
 	}
 
-	public void deleteRefreshToken(String userId) throws SQLException {
+	public void deleteRefreshToken(String userId) {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("userId", userId);
 		map.put("token", null);
 		userMapper.deleteRefreshToken(map);
 	}
 
-	public UserDto userInfo(String userId) throws SQLException {
+	public UserDto userInfo(String userId) {
 		return Optional.ofNullable(userMapper.userInfo(userId))
 				.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 	}
 
 	@Transactional
-	public void saveRefreshToken(String userId, String refreshToken) throws SQLException {
+	public void saveRefreshToken(String userId, String refreshToken) {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("userId", userId);
 		map.put("token", refreshToken);
 		userMapper.saveRefreshToken(map);
 	}
 
-	public String refreshAccessToken(UserDto userDto) throws SQLException {
+	public String refreshAccessToken(UserDto userDto) {
 		String refreshToken = userDto.getRefreshToken();
 		String userId = userDto.getUserId();
 
@@ -130,7 +131,7 @@ public class UserService {
 		}
 
 		// 저장된 Refresh Token과 비교
-		String storedRefreshToken = (String) userMapper.getRefreshToken(userId);
+		String storedRefreshToken = (String) userMapper.findRefreshTokenByUserId(userId);
 		if (!refreshToken.equals(storedRefreshToken)) {
 			throw new CustomException(REFRESH_TOKEN_MISMATCH);
 		}
