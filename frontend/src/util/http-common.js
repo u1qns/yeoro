@@ -13,6 +13,20 @@ const localAxios = () => {
     instance.defaults.headers.post["Content-Type"] = "application/json";
     instance.defaults.headers.put["Content-Type"] = "application/json";
 
+    // 요청 인터셉터 추가
+    instance.interceptors.request.use(
+        (config) => {
+            const accessToken = sessionStorage.getItem('accessToken'); // 토큰 가져오기
+            if (accessToken) {
+                config.headers['Authorization'] = `Bearer ${accessToken}`; // 헤더에 토큰 추가
+            }
+            return config;
+        },
+        (error) => {
+            return Promise.reject(error); 
+        }
+    );
+
     return instance;
 }
 
