@@ -16,32 +16,20 @@ import java.util.List;
 @Service
 public class PlaceSearchService {
 
-    private final WebClient webClient;
-    private final ObjectMapper objectMapper;
+    private final PlaceService placeService;
 
-    public PlaceSearchService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
-        this.webClient = webClientBuilder.baseUrl("https://places.googleapis.com/v1").build();
-        this.objectMapper = objectMapper;
+    public PlaceSearchService(PlaceService placeService) {
+        this.placeService = placeService;
     }
 
     public Mono<List<PlaceDto>> searchPlaces(String textQuery, double latitude, double longitude) {
-        String apiKey = ""; // TODO 본인의 API 키로 교체해주세요
-
-        String url = "/places:searchText?key=" + apiKey;
-
+        String url = "/places:searchText?key=" + placeService.getApiKey();
         String requestBody = String.format(
                 "{\"textQuery\": \"%s\", \"locationBias\": {\"circle\": {\"center\": {\"latitude\": %f, \"longitude\": %f}, \"radius\": %f}}, \"languageCode\": \"%s\", \"pageSize\": %d}",
                 textQuery, latitude, longitude, 500.0, "ko", 10
         );
-
-        return webClient.post()
-                .uri(url)
-                .header("X-Goog-Api-Key", apiKey)
-                .header("X-Goog-FieldMask",
-                        "places.id,places.displayName.text,places.formattedAddress,places.location,places.primaryTypeDisplayName,places.nationalPhoneNumber,places.rating,places.photos,places.currentOpeningHours.weekdayDescriptions,places.types")
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(JsonNode.class)
+        String fieldMask = "places.id,places.displayName.text,places.formattedAddress,places.location,places.primaryTypeDisplayName,places.nationalPhoneNumber,places.rating,places.photos,places.currentOpeningHours.weekdayDescriptions,places.types";
+        return placeService.getJsonResponse(url, requestBody, fieldMask)
                 .map(this::convertToPlaceDtos);
     }
 
